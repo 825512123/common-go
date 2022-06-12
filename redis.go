@@ -2,6 +2,9 @@ package common_go
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	//"github.com/garyburd/redigo/redis"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
@@ -41,10 +44,25 @@ func RedisSet(key string, value interface{}) {
 	}
 }
 
+func RedisSetOut(key string, value interface{}, t time.Duration) {
+	err := REDIS.Set(ctx, key, value, time.Second*t).Err()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func RedisGet(key string) string {
 	val, err := REDIS.Get(ctx, key).Result()
 	if err != nil {
 		return ""
+	}
+	return val
+}
+
+func RedisGetInt(key string) int {
+	val, err := strconv.Atoi(RedisGet(key))
+	if err != nil {
+		return 0
 	}
 	return val
 }
