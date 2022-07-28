@@ -2,6 +2,7 @@ package common_go
 
 import (
 	"bytes"
+	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -15,6 +16,8 @@ import (
 	"sort"
 	"time"
 )
+
+var OPEN_LOG int8
 
 //JSON 普通返回不记录日志
 func JSON(c *gin.Context, msg string, obj interface{}) {
@@ -40,6 +43,9 @@ func LogStruct(msg string, obj interface{}) {
 
 //LogMap map日志
 func LogMap(msg string, data map[string]interface{}) {
+	if OPEN_LOG == 0 {
+		return
+	}
 	Logger().WithFields(logrus.Fields{
 		"name": "map",
 		"data": data,
@@ -48,6 +54,9 @@ func LogMap(msg string, data map[string]interface{}) {
 
 //LogMsg 信息日志
 func LogMsg(msg ...interface{}) {
+	if OPEN_LOG == 0 {
+		return
+	}
 	Logger().WithFields(logrus.Fields{
 		"name": "msg",
 	}).Info(msg)
@@ -139,6 +148,13 @@ func Sha1(str string) string {
 	h.Write([]byte(str))
 	bs := h.Sum(nil)
 	return hex.EncodeToString(bs)
+}
+
+//Md5 生成32位md5字串
+func Md5(s string) string {
+	h := md5.New()
+	h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func Post(url string, data map[string]interface{}, header map[string]string) (result []byte, err error) {
