@@ -10,10 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -155,6 +157,53 @@ func Md5(s string) string {
 	h := md5.New()
 	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+//GetRandString 获取随机字符串
+func GetRandString(length, t int) string {
+	if length < 1 {
+		return ""
+	}
+	char := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	switch t {
+	case 1: //"upper":
+		char = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	case 2: //"lower":
+		char = "abcdefghijklmnopqrstuvwxyz"
+	case 3: //"number":
+		char = "0123456789"
+	case 4: //"uppernumber":
+		char = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	case 5: //"lowernumber":
+		char = "abcdefghijklmnopqrstuvwxyz0123456789"
+	case 6: //"lowerupper":
+		char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	}
+	charArr := strings.Split(char, "")
+	charLen := len(charArr)
+	ran := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	rChar := ""
+	for i := 1; i <= length; i++ {
+		rChar = rChar + charArr[ran.Intn(charLen)]
+	}
+	return rChar
+}
+
+//GetRandInt 获取随机数
+func GetRandInt(length int) string {
+	if length < 1 {
+		return ""
+	}
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	format := "%0" + fmt.Sprintf("%dv", length)
+	l := 10
+	if length > 1 {
+		for i := 1; i < length; i++ {
+			l *= 10
+		}
+	}
+	return fmt.Sprintf(format, rnd.Intn(l))
 }
 
 func Post(url string, data map[string]interface{}, header map[string]string) (result []byte, err error) {
