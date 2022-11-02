@@ -20,6 +20,7 @@ import (
 )
 
 var OPEN_LOG int8
+var tr *http.Transport
 
 //JSON 普通返回不记录日志
 func JSON(c *gin.Context, msg string, obj interface{}) {
@@ -67,6 +68,14 @@ func LogMsg(msg ...interface{}) {
 //GetDate 获取当前日期
 func GetDate() string {
 	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+//GetDateByLayout 获取当前日期
+func GetDateByLayout(layout string) string {
+	if layout == "" {
+		layout = "2006-01-02 15:04:05"
+	}
+	return time.Now().Format(layout)
 }
 
 //MbSubstr 模拟PHP mb_substr 字符串截取函数支持utf8编码
@@ -208,7 +217,7 @@ func GetRandInt(length int) string {
 
 func Post(url string, data map[string]interface{}, header map[string]string) (result []byte, err error) {
 	postData, _ := json.Marshal(data)
-	client := &http.Client{}
+	//client := &http.Client{}
 	req, err := http.NewRequest("POST", url, bytes.NewReader(postData))
 	if err != nil {
 		LogMsg(url, "接口请求失败")
@@ -216,6 +225,10 @@ func Post(url string, data map[string]interface{}, header map[string]string) (re
 	}
 	for s, s2 := range header {
 		req.Header.Add(s, s2)
+	}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   3 * time.Second, // 超时加在这里，是每次调用的超时
 	}
 	resp, err := client.Do(req)
 	if err != nil {

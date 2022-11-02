@@ -75,3 +75,23 @@ func RedisIncrBy(key string, val int64) int64 {
 	}
 	return val
 }
+
+func RedisHset(key string, key1 string, value interface{}) {
+	err := REDIS.HSet(ctx, key, key1, value).Err()
+	if err != nil {
+		panic(err)
+	}
+}
+func RedisHDel(key string, key1 string) {
+	err := REDIS.HDel(ctx, key, key1).Err()
+	if err != nil {
+		panic(err)
+	}
+}
+func RedisHGetAll(key string) map[string]string {
+	res, err := REDIS.HGetAll(ctx, key).Result()
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
