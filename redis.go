@@ -32,7 +32,7 @@ func InitRedis(add, pass string, db int) *redis.Client {
 		Logger().WithFields(logrus.Fields{
 			"name": "hanyun",
 		}).Info("redis connect ping response:, err:"+pong, "Info")
-		//REDIS = client
+		REDIS = client
 	}
 	return client
 }
@@ -67,7 +67,7 @@ func RedisGetInt(key string) int {
 	return val
 }
 
-//RedisIncrBy redis 给当前key自增val
+// RedisIncrBy redis 给当前key自增val
 func RedisIncrBy(key string, val int64) int64 {
 	val, err := REDIS.IncrBy(ctx, key, val).Result()
 	if err != nil {
