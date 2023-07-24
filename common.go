@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -216,6 +217,13 @@ func Sha1(str string) string {
 	h.Write([]byte(str))
 	bs := h.Sum(nil)
 	return hex.EncodeToString(bs)
+}
+
+func Sha256(str string) string {
+	m := sha256.New()
+	m.Write([]byte(str))
+	res := hex.EncodeToString(m.Sum(nil))
+	return res
 }
 
 //Md5 生成32位md5字串

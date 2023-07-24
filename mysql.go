@@ -62,17 +62,24 @@ func InitialToCapital(str string) string {
 	return InitialToCapitalStr
 }
 
+//TableNameToTableStruct 数据库-数据表转结构体输出
+func TableNameToTableStruct(db *gorm.DB, table string) {
+	var columns []*Column
+	db.Debug().Raw("select column_name, data_type, column_comment, column_key, extra from information_schema.columns where table_name = ? and table_schema =(select database()) order by ordinal_position ", table).Scan(&columns)
+	TableToStruct(columns, table)
+}
+
 // 数据表转结构体
-func TableToStruct(data []*Column) {
+func TableToStruct(data []*Column, table string) {
 	// ----- 拼接生成的struct  start--------
-	structStr := ""
+	structStr := fmt.Sprintf("type %s struct {\n", BigHump(table))
 	for _, column := range data {
 		structStr += "    " + BigHump(column.ColumnName) //InitialToCapital(column.ColumnName)
-		if column.DataType == "int" || column.DataType == "tinyint" {
+		if column.DataType == "tinyint" {
 			structStr += " int "
 		} else if column.DataType == "decimal" {
 			structStr += " float64 "
-		} else if column.DataType == "bigint" {
+		} else if column.DataType == "bigint" || column.DataType == "int" {
 			structStr += " int64 "
 		} else {
 			structStr += " string "
@@ -86,5 +93,6 @@ func TableToStruct(data []*Column) {
 		//		column.ColumnComment, column.ColumnName)
 		//}
 	}
+	structStr += "} \n"
 	fmt.Println(structStr)
 }
