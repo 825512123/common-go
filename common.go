@@ -1,6 +1,7 @@
 package common_go
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
@@ -302,6 +303,50 @@ func Post(url string, data map[string]interface{}, header map[string]string) (re
 	defer resp.Body.Close()
 	result, err = ioutil.ReadAll(resp.Body)
 	return
+}
+
+// 创建路径
+func MkPath(path string) bool {
+	if !PathExists(path) {
+		err := os.MkdirAll(path, 0755)
+		if err != nil {
+			fmt.Println("path err:", err)
+			return false
+		}
+		return true
+	}
+	return true
+}
+
+// 创建文件并写入内容
+func MkFile(path, info string) bool {
+	file, err := os.Create(path)
+	if err != nil {
+		fmt.Println("file err:", err)
+		return false
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	_, err = writer.WriteString(info)
+	if err != nil {
+		fmt.Println("file write err:", err)
+		return false
+	}
+	writer.Flush()
+	return true
+}
+
+// 判定文件夹或文件是否存在
+func PathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return false
 }
 
 //Logger 公共实例化log方法

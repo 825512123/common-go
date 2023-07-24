@@ -62,17 +62,27 @@ func InitialToCapital(str string) string {
 	return InitialToCapitalStr
 }
 
-//TableNameToTableStruct 数据库-数据表转结构体输出
-func TableNameToTableStruct(db *gorm.DB, table string) {
-	var columns []*Column
-	db.Debug().Raw("select column_name, data_type, column_comment, column_key, extra from information_schema.columns where table_name = ? and table_schema =(select database()) order by ordinal_position ", table).Scan(&columns)
-	TableToStruct(columns, table)
+//DBTablesToStructs 数据库-数据表转结构体输出 tables []string{"table_name"} 有填写path则新增path目录
+func DBTablesToStructs(db *gorm.DB, tables []string, path string) {
+	if path != "" {
+		MkPath("model")
+	}
+	for _, table := range tables {
+		var columns []*Column
+		db.Debug().Raw("select column_name, data_type, column_comment, column_key, extra from information_schema.columns where table_name = ? and table_schema =(select database()) order by ordinal_position ", table).Scan(&columns)
+		TableToStruct(columns, table, path)
+	}
 }
 
-// 数据表转结构体
-func TableToStruct(data []*Column, table string) {
+// 数据表转结构体 有填写path则在path目录下写入table文件并以path作为包名
+func TableToStruct(data []*Column, table, path string) {
 	// ----- 拼接生成的struct  start--------
-	structStr := fmt.Sprintf("type %s struct {\n", BigHump(table))
+	structStr := ""
+	if path != "" {
+		structStr = fmt.Sprintf("package %s\n\ntype %s struct {\n", path, BigHump(table))
+	} else {
+		structStr = fmt.Sprintf("type %s struct {\n", BigHump(table))
+	}
 	for _, column := range data {
 		structStr += "    " + BigHump(column.ColumnName) //InitialToCapital(column.ColumnName)
 		if column.DataType == "tinyint" {
@@ -93,6 +103,13 @@ func TableToStruct(data []*Column, table string) {
 		//		column.ColumnComment, column.ColumnName)
 		//}
 	}
-	structStr += "} \n"
-	fmt.Println(structStr)
+	structStr += "}"
+	if path != "" {
+		if !MkFile(path+"/"+table+".go", structStr) {
+			fmt.Println("写入失败")
+			fmt.Println(structStr)
+		}
+	} else {
+		fmt.Println(structStr)
+	}
 }
