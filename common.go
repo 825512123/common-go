@@ -281,6 +281,10 @@ func GetRandInt(length int) string {
 	return fmt.Sprintf(format, rnd.Intn(l))
 }
 
+//Post 发送post请求
+//url 请求地址
+//data 请求参数
+//header 请求头 map[string]string{"Content-Type": "application/json;charset=utf-8"}
 func Post(url string, data map[string]interface{}, header map[string]string) (result []byte, err error) {
 	postData, _ := json.Marshal(data)
 	//client := &http.Client{}
@@ -305,7 +309,9 @@ func Post(url string, data map[string]interface{}, header map[string]string) (re
 	return
 }
 
-// 创建路径
+// MkPath 创建路径
+// path 路径 当前路径下创建
+// 返回 是否创建成功
 func MkPath(path string) bool {
 	if !PathExists(path) {
 		err := os.MkdirAll(path, 0755)
@@ -318,7 +324,10 @@ func MkPath(path string) bool {
 	return true
 }
 
-// 创建文件并写入内容
+// MkFile 创建文件并写入内容
+// path 文件路径
+// info 文件内容
+// 返回 是否创建成功
 func MkFile(path, info string) bool {
 	file, err := os.Create(path)
 	if err != nil {
