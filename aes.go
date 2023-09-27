@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"fmt"
 )
 
 // PKCS7Padding 将明文填充为块长度的整数倍
@@ -36,7 +35,6 @@ func AESCBCEncrypt(p, key, iv []byte) ([]byte, error) {
 	if len(iv) == 0 {
 		iv = key[:block.BlockSize()]
 	}
-	fmt.Println("iv:", string(iv))
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 	blockMode.CryptBlocks(ciphertext, p)
 	return ciphertext, nil
