@@ -116,3 +116,8 @@ func TableToStruct(data []*Column, table, model string) {
 		fmt.Println(structStr)
 	}
 }
+
+// PageLastId 获取最后一个id的通用结构体
+type PageLastId struct {
+	Id string `gorm:"column:id;" json:"id"`
+}

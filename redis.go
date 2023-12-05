@@ -2,6 +2,7 @@ package common_go
 
 import (
 	"context"
+	"gorm.io/gorm"
 	"strconv"
 	"time"
 
@@ -167,12 +168,12 @@ func RedisHSetNX(key string, key1 string, value interface{}) bool {
 	return REDIS.HSetNX(ctx, key, key1, value).Val()
 }
 
-//RedisLPush 将一条数据添加到列表的头部（类似入栈）可直接添加切片[]string
+//RedisLPush 将一条数据添加到列表的头部（类似入栈）不可直接添加切片[]string
 func RedisLPush(key string, values ...interface{}) {
 	REDIS.LPush(ctx, key, values)
 }
 
-//RedisRPush 将一条数据添加到列表的尾部 可直接添加切片[]string
+//RedisRPush 将一条数据添加到列表的尾部 不可直接添加切片[]string
 func RedisRPush(key string, values ...interface{}) {
 	REDIS.RPush(ctx, key, values)
 }
@@ -433,4 +434,59 @@ func RedisZRemRangeByRank(key string, start, stop int64) int64 {
 // RedisZRemRangeByScore 删除指定分数区间的成员
 func RedisZRemRangeByScore(key, min, max string) int64 {
 	return REDIS.ZRemRangeByScore(ctx, key, min, max).Val()
+}
+
+// RedisGetPageLastId 获取数据表当前页得最大值 此为解决大数据分页查询得重要优化步骤
+func RedisGetPageLastId(DB *gorm.DB, table, limit, page, filed string) (lastId string) {
+	query := filed
+	if "id" != filed {
+		query = filed + " AS id"
+	}
+	// 每页结束最大值 缓存主key
+	homepageKey := table + "pageId" + limit
+	// 当前数据库总页数 缓存主key
+	homepageEndKey := "endPage" + limit
+	// 字符串转int
+	pageNum, _ := strconv.Atoi(page)
+	if pageNum < 1 {
+		return "0"
+	}
+	limitNum, _ := strconv.Atoi(limit)
+	// 按照最新的取一次
+	lastId = RedisHGet(homepageKey, page)
+	if "" == lastId {
+		data := PageLastId{}
+		// 取当前数据表总页数 也就是最后一页得页码
+		endPage := RedisHGet(homepageEndKey, table)
+		endPageNum, _ := strconv.Atoi(endPage)
+		//// 没有则设置当前数据表总页数
+		//if 0 == endPageNum {
+		//	var sum int64
+		//	DB.Table(table).Count(&sum)
+		//	count := int(sum)
+		//	endPageNum = count / limitNum
+		//	if count%limitNum > 0 {
+		//		endPageNum++
+		//	}
+		//	RedisHSet(homepageEndKey, table, endPageNum)
+		//}
+		// 如果是最后一页
+		if pageNum == endPageNum {
+			DB.Table(table).Select(query).Order(filed + " DESC").Limit(1).Find(&data)
+		} else {
+			//取上一页的lastId
+			pLastId := RedisGetPageLastId(DB, table, limit, strconv.Itoa(pageNum-1), filed)
+			// 还为空则去数据库
+			res := DB.Table(table).Where(filed+" > ? ", pLastId).Select(query).Order(filed + " ASC").
+				Offset(limitNum - 1).Limit(1).Find(&data)
+			if res.RowsAffected == 0 {
+				DB.Table(table).Select(query).Order(filed + " DESC").Limit(1).Find(&data)
+				RedisHSet(homepageEndKey, table, page)
+			}
+		}
+		lastId = data.Id
+	}
+	// 将当前页得最大值存储
+	RedisHSet(homepageKey, page, lastId)
+	return
 }
